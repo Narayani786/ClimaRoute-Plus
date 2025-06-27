@@ -1,0 +1,17 @@
+# Ignore enviroment variable
+.env
+
+# Ignore node_modules
+node_modules
+
+# Ignore OS and editor files
+.DS_Store
+*.log
+.vscode
+
+# Vite/React/Build ignores 
+dist/
+build/
+
+# Ignore local envs in subfolders
+client/.envserver/.env
