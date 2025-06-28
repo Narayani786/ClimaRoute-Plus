@@ -10,16 +10,36 @@ function MapView() {
     const shareURL = window.location.href;
 
     useEffect(() => {
-        if(window.tt && document.getElementById('map')) {
+        const loadTomTomMap = async () => {
+            if(!window.tt || !window.tt.map) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.14.0/maps/maps-web.min.js';
+
+                    script.async = true;
+                    script.onload = resolve;
+                    script.onerror = reject;
+
+                    document.body.appendChild(script);
+                });
+            }
             const map = window.tt.map({
                 key: import.meta.env.VITE_TOMTOM_API_KEY,
                 container: 'map',
-                center: [77.2090, 28.6139], // Delhi
-                zoom: 10,
+                center: [77.2090, 28.6139],
+                zoome: 10,
             });
 
-            map.addControl(new window.tt.control.NavigateControl());
-        }
+            if (window.tt.control && window.tt.control.NavigationControl) {
+                map.addControl(new window.tt.control.NavigationControl());
+            } else {
+                console.warn('NavigationControl is not available yet');
+            }
+        };
+
+        loadTomTomMap().catch((err) =>
+        console.error('Map load error:', err.message || err)
+    );
     }, []);
 
 
