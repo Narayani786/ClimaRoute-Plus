@@ -18,10 +18,10 @@ function MapView() {
                 zoom: 10,
             });
 
-            map.addControl(new window.tt.NavigateControl());
+            map.addControl(new window.tt.control.NavigateControl());
         }
     }, []);
-    
+
 
     return(
         <div id="map" style={{ width: '100%', height: '400px' }}>
