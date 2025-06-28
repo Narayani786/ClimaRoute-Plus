@@ -1,6 +1,6 @@
-import { getRouteFromTomTom } from '../utils/getRouteFromTomTom';
-import { getWeatherAlerts } from '../utils/getWeatherAlerts';
-import { calculateSafetyScore } from '../utils/calculateSafetyScore';
+import { getRouteFromTomTom } from '../utils/getRouteFromTomTom.js';
+import { getWeatherAlerts } from '../utils/getWeatherAlerts.js';
+import { calculateSafetyScore } from '../utils/calculateSafetyScore.js';
 
 export const getRoute = async (req, res) => {
     const { start, end } = req.query;
