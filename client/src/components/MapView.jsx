@@ -10,7 +10,7 @@ function MapView() {
     const shareURL = window.location.href;
 
     return(
-        <div>
+        <div id="map" style={{ width: '100%', height: '400px' }}>
             <h2>ClimaRoute+ Map View</h2>
             <ModeSelector mode={mode} setMode={setMode}/>
             <SafetyPopup score={score}/>
