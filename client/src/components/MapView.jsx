@@ -9,38 +9,46 @@ function MapView() {
 
     const shareURL = window.location.href;
 
-    useEffect(() => {
-        const loadTomTomMap = async () => {
-            if(!window.tt || !window.tt.map) {
-                await new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = 'https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.14.0/maps/maps-web.min.js';
+    
+  useEffect(() => {
+  const loadTomTomSDK = async () => {
+    // Load the SDK only if not already loaded
+    if (!window.tt || !window.tt.map) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.14.0/maps/maps-web.min.js';
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('TomTom SDK failed to load'));
+        document.body.appendChild(script);
+      });
+    }
 
-                    script.async = true;
-                    script.onload = resolve;
-                    script.onerror = reject;
+    // Ensure the 'map' div exists before trying to render
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+      console.warn("Map container not found");
+      return;
+    }
 
-                    document.body.appendChild(script);
-                });
-            }
-            const map = window.tt.map({
-                key: import.meta.env.VITE_TOMTOM_API_KEY,
-                container: 'map',
-                center: [77.2090, 28.6139],
-                zoome: 10,
-            });
+    // Initialize the map
+    const map = window.tt.map({
+      key: import.meta.env.VITE_TOMTOM_API_KEY,
+      container: 'map',
+      center: [77.2090, 28.6139], // Delhi (default center)
+      zoom: 10,
+    });
 
-            if (window.tt.control && window.tt.control.NavigationControl) {
-                map.addControl(new window.tt.control.NavigationControl());
-            } else {
-                console.warn('NavigationControl is not available yet');
-            }
-        };
+    // Add navigation controls safely
+    if (window.tt.control && window.tt.control.NavigationControl) {
+      map.addControl(new window.tt.control.NavigationControl());
+    }
+  };
 
-        loadTomTomMap().catch((err) =>
-        console.error('Map load error:', err.message || err)
-    );
-    }, []);
+  loadTomTomSDK().catch((err) =>
+    console.error('Error loading TomTom Map:', err.message || err)
+  );
+}, []);
 
 
     return(
