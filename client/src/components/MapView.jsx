@@ -51,6 +51,39 @@ function MapView() {
 }, []);
 
 
+  useEffect(() => {
+    const fetchSafetyScore = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/route',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+              body: JSON.stringify({
+                start: { lat: 28.6139, lon: 77.2090 },
+                end: { lat: 28.9845, lon: 77.7064 },
+                mode: mode,
+              }),
+            });
+            const data = await response.json();
+            console.log('API response:', data);
+
+            if(data.safetyScore) {
+              setScore(data.safetyScore);
+            } else {
+              setScore('Error');
+            }
+          } catch (error) {
+            console.error('Error fetching safety score:', error);
+            setScore('Error');
+          }
+      };
+      fetchSafetyScore();
+  }, [mode]);
+
+  
+
     return(
         <div id="map" style={{ width: '100%', height: '400px' }}>
             <h2>ClimaRoute+ Map View</h2>
