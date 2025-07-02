@@ -5,6 +5,8 @@ function SafetyPopup({ score }) {
         <div>
             <h3>Safety Score</h3>
             <p>{ score !== null ? `Score: ${score}` : 'Loading...' }</p>
+
+
         </div>
     );
 }

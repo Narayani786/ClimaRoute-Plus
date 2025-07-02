@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
+
+import '@tomtom-international/web-sdk-maps/dist/maps.css';
+import tt from '@tomtom-international/web-sdk-maps';
+
+import ShareButton from './ShareButton';
 import ModeSelector from './ModeSelector';
 import SafetyPopup from './SafetyPopup';
-import ShareButton from './ShareButton';
+
 
 function MapView() {
     const [mode, setMode] = useState('car');
     const [score, setScore] = useState(null);
 
     const shareURL = window.location.href;
-
     
   useEffect(() => {
   const loadTomTomSDK = async () => {
@@ -51,45 +55,102 @@ function MapView() {
 }, []);
 
 
-  useEffect(() => {
-    const fetchSafetyScore = async () => {
+const fetchSafetyScore = async (start, end) => {
       try {
-        const response = await fetch('http://localhost:5000/api/route',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-              body: JSON.stringify({
-                start: { lat: 28.6139, lon: 77.2090 },
-                end: { lat: 28.9845, lon: 77.7064 },
-                mode: mode,
-              }),
-            });
+        const response = await fetch(`http://localhost:5000/api/route?start=${start.lat},${start.lng}&end=${end.lat},${end.lng}`
+        );
             const data = await response.json();
             console.log('API response:', data);
-
-            if(data.safetyScore) {
-              setScore(data.safetyScore);
-            } else {
-              setScore('Error');
-            }
+            setScore(data.score);
           } catch (error) {
             console.error('Error fetching safety score:', error);
-            setScore('Error');
           }
       };
-      fetchSafetyScore();
-  }, [mode]);
+
+      // initialize map and handle click events
+
+  useEffect(() => {
+
+      let map = tt.map({
+        key: import.meta.env.VITE_TOMTOM_API_KEY,
+        container: 'map',
+        center: [77.1025, 28.7041],
+        zoom: 10
+      });
+
+      let startMarker = null;
+      let endMarker = null;
+      let routeLayer = null;
+
+      map.on('click', async (e) => {
+        const { lng, lat } = e.lngLat;
+
+        if(!startMarker) {
+          startMarker = new tt.Marker().setLngLat([ lng, lat ]).addTo(map);
+        } else if (!endMarker) {
+          endMarker = new tt.Marker().setLngLat([ lng, lat ]).addTo(map);
+
+          const start = startMarker.getLngLat();
+          const end = endMarker.getLngLat();
+
+          try {
+            const res = await fetch(`http://localhost:5000/api/route?start=${start.lat},${start.lng}&end=${end.lat},${end.lng}`);
+            const data = await res.json();
+            console.log('API response:', data);
+            setScore(data.score);
+
+            if(routeLayer)
+              map.removeLayer(routeLayer);
+
+              // draw new route
+              const routeGeoJSON = {
+                type: 'Feature',
+                geometry: data.routeData.routes[0].legs[0].points? {
+                  type: 'LineString',
+                  coordinates: data.routeData.routes[0].legs[0].points.map(p => [p.longitude, p.latitude])
+                } : {
+                  type: 'LineString', coordinates: []
+                }
+              };
+              routeLayer = new tt.GeoJSONSource({ data: routeGeoJSON });
+              map.addLayer({
+                id: 'route-line',
+                type: 'line',
+                source: routeLayer,
+                point: {
+                  'line-color':'#4a90e2',
+                  'line-width': 4
+                }
+              });
+            } catch (err) {
+              console.error('Error fetching route or score:', err);
+            }
+          } else {
+          startMarker.remove();
+          endMarker.remove();
+          if(routeLayer)
+            map.removeLayer('route-line');
+
+          startMarker = new tt.Marker().setLngLat([ lng, lat ]).addTo(map);
+          endMarker = null;
+          setScore(null);
+          }
+        });
+
+      return () => map.remove();
+  }, []);
 
   
-
     return(
-        <div id="map" style={{ width: '100%', height: '400px' }}>
+        <div className="map-container">
             <h2>ClimaRoute+ Map View</h2>
             <ModeSelector mode={mode} setMode={setMode}/>
             <SafetyPopup score={score}/>
             <ShareButton url={shareURL}/>
+
+            <div id='map'
+            style={{ width: '100%', height: '400px', margin: '16px' }}>
+            </div>
         </div>
     );
 }
