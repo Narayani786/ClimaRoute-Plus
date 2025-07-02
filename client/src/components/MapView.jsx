@@ -55,12 +55,11 @@ function MapView() {
 }, []);
 
 
-const fetchSafetyScore = async (start, end) => {
+const fetchSafetyScore = async (start, end, mode) => {
       try {
-        const response = await fetch(`http://localhost:5000/api/route?start=${start.lat},${start.lng}&end=${end.lat},${end.lng}`
+        const response = await fetch(`http://localhost:5000/api/route?start=${start.lat},${start.lng}&end=${end.lat},${end.lng}&mode=${mode}`
         );
             const data = await response.json();
-            console.log('API response:', data);
             setScore(data.score);
           } catch (error) {
             console.error('Error fetching safety score:', error);
@@ -92,9 +91,10 @@ const fetchSafetyScore = async (start, end) => {
 
           const start = startMarker.getLngLat();
           const end = endMarker.getLngLat();
+          fetchSafetyScore(start, end, mode);
 
           try {
-            const res = await fetch(`http://localhost:5000/api/route?start=${start.lat},${start.lng}&end=${end.lat},${end.lng}`);
+            const res = await fetch(`http://localhost:5000/api/route?start=${start.lat},${start.lng}&end=${end.lat},${end.lng}&mode=${mode}`);
             const data = await res.json();
             console.log('API response:', data);
             setScore(data.score);

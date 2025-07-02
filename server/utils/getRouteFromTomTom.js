@@ -1,10 +1,14 @@
 import fetch from 'node-fetch';
 
-export const getRouteFromTomTom = async (start, end) => {
-    const apiKey = process.env.TOMTOM_API_KEY;
-    const url = `https://api.tomtom.com/routing/1/calculateRoute/${start}:${end}/json?key=${apiKey}`;
+export const getRouteFromTomTom = async (req, res) => {
+    const { start, end } = req.query;
+    try {
+        const routeData = await getRouteFromTomTom(start, end);
+        const alerts = await getWeatherAlerts(start);
+        const score = calculateSafetyScore(alerts);
 
-    const res = await fetch(url);
-    const data = await res.json();
-    return data;
+        res.json({ routeData, alerts, score });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };

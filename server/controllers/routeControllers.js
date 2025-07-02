@@ -1,16 +1,16 @@
 import { getRouteFromTomTom } from '../utils/getRouteFromTomTom.js';
-import { getWeatherAlerts } from '../utils/getWeatherAlerts.js';
+import getWeatherAlerts from '../utils/getWeatherAlerts.js';
 import { calculateSafetyScore } from '../utils/calculateSafetyScore.js';
 
 export const getRoute = async (req, res) => {
-    const { start, end } = req.query;
+    const { start, end, mode } = req.query;
 
     try {
         const routeData = await getRouteFromTomTom(start, end);
-        const alerts = await getWeatherAlerts(start);
-        const score = calculateSafetyScore(alerts);
+        const weather = await getWeatherAlerts(start);
+        const score = calculateSafetyScore(weather, mode);
 
-        res.json({ routeData, alerts, score });
+        res.json({ routeData, weather, score });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
