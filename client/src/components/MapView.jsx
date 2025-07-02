@@ -55,92 +55,76 @@ function MapView() {
 }, []);
 
 
-const fetchSafetyScore = async (start, end, mode) => {
+
+  
+const fetchSafetyScore = async (start, end, mode, map) => {
       try {
-        const response = await fetch(`http://localhost:5000/api/route?start=${start.lat},${start.lng}&end=${end.lat},${end.lng}&mode=${mode}`
+        const startStr = `${start.lat}, ${start.lng}`;
+        const endStr = `${end.lat}, ${end.lng}`;
+
+        const response = await fetch(`http://localhost:5000/api/route?start=${startStr}&end=${endStr}&mode=${mode}`
         );
             const data = await response.json();
+            console.log('API response:', data);
+
+            if(data.error) {
+              console.error('API err:', data.error);
+              return;
+            }
+            console.log('Fetched score:', data.score);
             setScore(data.score);
           } catch (error) {
             console.error('Error fetching safety score:', error);
           }
       };
 
+
       // initialize map and handle click events
 
-  useEffect(() => {
+      useEffect(() => {
+        const initMap = () => {
+          const map = tt.map({
+            key: import.meta.env.VITE_TOMTOM_API_KEY,
+            container: 'map',
+            center: [77.1025, 28.7041],
+            zoom: 10,
+          });
 
-      let map = tt.map({
-        key: import.meta.env.VITE_TOMTOM_API_KEY,
-        container: 'map',
-        center: [77.1025, 28.7041],
-        zoom: 10
-      });
+          let startMarker = null;
+          let endMarker = null;
+          let layerMarker = null;
 
-      let startMarker = null;
-      let endMarker = null;
-      let routeLayer = null;
+          map.on('click', (e) => {
+            const { lng, lat } = e.lngLat;
 
-      map.on('click', async (e) => {
-        const { lng, lat } = e.lngLat;
+            if(!startMarker) {
+              startMarker = new tt.Marker().setLngLat([lng, lat]).addTo(map);
+            } else if (!endMarker) {
+              endMarker = new tt.Marker().setLngLat([lng, lat]).addTo(map);
 
-        if(!startMarker) {
-          startMarker = new tt.Marker().setLngLat([ lng, lat ]).addTo(map);
-        } else if (!endMarker) {
-          endMarker = new tt.Marker().setLngLat([ lng, lat ]).addTo(map);
+              const start = startMarker.getLngLat();
+              const end = endMarker.getLngLat();
 
-          const start = startMarker.getLngLat();
-          const end = endMarker.getLngLat();
-          fetchSafetyScore(start, end, mode);
+              fetchSafetyScore(start, end, mode, map);
+            } else {
+              startMarker.remove();
+              endMarker.remove();
+              startMarker = new tt.Marker().setLngLat([lng, lat]).addTo(map);
+              endMarker = null;
 
-          try {
-            const res = await fetch(`http://localhost:5000/api/route?start=${start.lat},${start.lng}&end=${end.lat},${end.lng}&mode=${mode}`);
-            const data = await res.json();
-            console.log('API response:', data);
-            setScore(data.score);
-
-            if(routeLayer)
-              map.removeLayer(routeLayer);
-
-              // draw new route
-              const routeGeoJSON = {
-                type: 'Feature',
-                geometry: data.routeData.routes[0].legs[0].points? {
-                  type: 'LineString',
-                  coordinates: data.routeData.routes[0].legs[0].points.map(p => [p.longitude, p.latitude])
-                } : {
-                  type: 'LineString', coordinates: []
-                }
-              };
-              routeLayer = new tt.GeoJSONSource({ data: routeGeoJSON });
-              map.addLayer({
-                id: 'route-line',
-                type: 'line',
-                source: routeLayer,
-                point: {
-                  'line-color':'#4a90e2',
-                  'line-width': 4
-                }
-              });
-            } catch (err) {
-              console.error('Error fetching route or score:', err);
+              if(routeLayer) {
+                map.removeLayer('route');
+                map.removeSource('route');
+                routeLayer = null;
+              }
+              setScore(null);
             }
-          } else {
-          startMarker.remove();
-          endMarker.remove();
-          if(routeLayer)
-            map.removeLayer('route-line');
+          });
+        };
+        initMap();
+      }, []);
 
-          startMarker = new tt.Marker().setLngLat([ lng, lat ]).addTo(map);
-          endMarker = null;
-          setScore(null);
-          }
-        });
 
-      return () => map.remove();
-  }, []);
-
-  
     return(
         <div className="map-container">
             <h2>ClimaRoute+ Map View</h2>
