@@ -57,21 +57,25 @@ function MapView() {
 
 
   
-const fetchSafetyScore = async (start, end, mode, map) => {
+const fetchSafetyScore = async (start, end, mode) => {
       try {
+
+        if(!start || !end || !mode) {
+          console.error('Missing parameters in fetchSafetyScore');
+          return;
+        }
+
         const startStr = `${start.lat}, ${start.lng}`;
         const endStr = `${end.lat}, ${end.lng}`;
 
         const response = await fetch(`http://localhost:5000/api/route?start=${startStr}&end=${endStr}&mode=${mode}`
         );
-            const data = await response.json();
-            console.log('API response:', data);
 
-            if(data.error) {
-              console.error('API err:', data.error);
-              return;
-            }
-            console.log('Fetched score:', data.score);
+        if(!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+            const data = await response.json();
+            console.log('Safety score:', data.score);
             setScore(data.score);
           } catch (error) {
             console.error('Error fetching safety score:', error);
@@ -134,6 +138,7 @@ const fetchSafetyScore = async (start, end, mode, map) => {
 
             <div id='map'
             style={{ width: '100%', height: '400px', margin: '16px' }}>
+              <SafetyPopup score={score}/>
             </div>
         </div>
     );

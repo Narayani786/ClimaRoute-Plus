@@ -1,13 +1,16 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import routeRoutes from './routes/route.js';
 
-dotenv.config();
 const app = express();
+
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true}));
 
+import dotenv from 'dotenv';
+dotenv.config();
+
+import routeRoutes from './routes/route.js';
 app.use('/api/route', routeRoutes);
 
 const PORT = process.env.PORT || 5000;

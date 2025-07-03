@@ -1,26 +1,29 @@
-import { getRouteFromTomTom } from '../utils/getRouteFromTomTom.js';
+import getRouteFromTomTom from '../utils/getRouteFromTomTom.js';
 import getWeatherAlerts from '../utils/getWeatherAlerts.js';
 import { calculateSafetyScore } from '../utils/calculateSafetyScore.js';
 
 export const getRoute = async (req, res) => {
-
-    const {query} = req;
-
-    if(!query || !query.start || !end.query || mode.query) {
-        return res.status(400).json({ error: 'Missing start, end, or mode in query' });
+    
+    try {
+        const query = req.query || {};
+        console.log('Incoming req.query:', query);
+        const { start, end, mode } = query;
+        if(!start || !end || !mode) {
+        return res.status(400).json({ error: 'Missing start, end or mode query' });
     }
 
-    const { start, end, mode } = query;
+    const [startLat, startLng] = start.split(',').map(Number);
+    const [endLat, endLng] = start.split(',').map(Number);
 
-    try {
-        const [startLat, startLng] = start.split(',');
-        const [endLat, endLng] = end.split(',');
+    const startCoord = {lat: startLat, lng: startLng};
+    const endCoord = {lat: endLat, lng: endLng};
 
-        const routeData = await getRouteFromTomTom([startLat, startLng], [endLat, endLng]);
-        const weather = await getWeatherAlerts([startLat, startLng]);
-        const score = calculateSafetyScore(weather, mode);
+        const routeData = await getRouteFromTomTom(startCoord, endCoord);
+        const alerts = await getWeatherAlerts(start);
+        const score = calculateSafetyScore(alerts, mode);
 
-        res.json({ routeData, weather, score });
+        res.json({ routeData, alerts, score });
+
     } catch (err) {
         console.error('Backend error:', err);
         res.status(500).json({ error: err.message });
