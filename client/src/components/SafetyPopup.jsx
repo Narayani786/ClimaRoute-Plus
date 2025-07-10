@@ -1,6 +1,6 @@
 import React from 'react';
 
-const SafetyPopup = ({ score }) => {
+const SafetyPopup = ({ score, reason }) => {
     if(score === null || score === undefined) {
         return null;
     }
@@ -14,8 +14,9 @@ const SafetyPopup = ({ score }) => {
     return (
         <div className="safety-popup">
             <h3>Safety Score</h3>
-            <p>Score: <strong>{score}</strong></p>
+            <p>Score: <strong>{score.score}</strong></p>
             <p>{getSafetyMessage(score)}</p>
+            <p>Reason: <strong>{score.reason}</strong></p>
         </div>
     );
 

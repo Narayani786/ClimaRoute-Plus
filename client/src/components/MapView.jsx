@@ -1,147 +1,138 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from "react";
+import tt from "@tomtom-international/web-sdk-maps";
+import "@tomtom-international/web-sdk-maps/dist/maps.css";
 
-import '@tomtom-international/web-sdk-maps/dist/maps.css';
-import tt from '@tomtom-international/web-sdk-maps';
+const MapView = () => {
+  const mapRef = useRef(null); // map instance
+  const [mode, setMode] = useState("car");
+  const [score, setScore] = useState(null);
+  const [reason, setReason] = useState('');
+  const startRef = useRef(null); // start marker
+  const endRef = useRef(null);   // end marker
+  const coordsRef = useRef({ start: null, end: null }); // store points between renders
 
-import ShareButton from './ShareButton';
-import ModeSelector from './ModeSelector';
-import SafetyPopup from './SafetyPopup';
+  const fetchSafetyScore = async (start, end, mode) => {
+    try {
+      const startStr = `${start.lat},${start.lng}`;
+      const endStr = `${end.lat},${end.lng}`;
 
+      const res = await fetch(
+        `http://localhost:5000/api/route?start=${startStr}&end=${endStr}&mode=${mode}`
+      );
 
-function MapView() {
-    const [mode, setMode] = useState('car');
-    const [score, setScore] = useState(null);
+      const data = await res.json();
+      console.log("Fetched safety score:", data);
 
-    const shareURL = window.location.href;
-    
-  useEffect(() => {
-  const loadTomTomSDK = async () => {
-    // Load the SDK only if not already loaded
-    if (!window.tt || !window.tt.map) {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.14.0/maps/maps-web.min.js';
-        script.async = true;
-        script.onload = resolve;
-        script.onerror = () => reject(new Error('TomTom SDK failed to load'));
-        document.body.appendChild(script);
-      });
-    }
+      setScore(data.score);
+      setReason(data.reason);
 
-    // Ensure the 'map' div exists before trying to render
-    const mapContainer = document.getElementById('map');
-    if (!mapContainer) {
-      console.warn("Map container not found");
-      return;
-    }
+      if (data.route && mapRef.current) {
+        const geoJson = {
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: data.route,
+          },
+        };
 
-    // Initialize the map
-    const map = window.tt.map({
-      key: import.meta.env.VITE_TOMTOM_API_KEY,
-      container: 'map',
-      center: [77.2090, 28.6139], // Delhi (default center)
-      zoom: 10,
-    });
-
-    // Add navigation controls safely
-    if (window.tt.control && window.tt.control.NavigationControl) {
-      map.addControl(new window.tt.control.NavigationControl());
+        if (mapRef.current.getSource("route")) {
+          mapRef.current.getSource("route").setData(geoJson);
+        } else {
+          mapRef.current.addSource("route", {
+            type: "geojson",
+            data: geoJson,
+          });
+          mapRef.current.addLayer({
+            id: "route",
+            type: "line",
+            source: "route",
+            paint: {
+              "line-color": "#007bff",
+              "line-width": 4,
+            },
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching safety score:", err);
     }
   };
 
-  loadTomTomSDK().catch((err) =>
-    console.error('Error loading TomTom Map:', err.message || err)
+  useEffect(() => {
+    const map = tt.map({
+      key: import.meta.env.VITE_TOMTOM_API_KEY,
+      container: "map",
+      center: [76.8, 28.7],
+      zoom: 10,
+    });
+
+    mapRef.current = map;
+
+    map.on("click", (e) => {
+      const { lat, lng } = e.lngLat;
+
+      if (!coordsRef.current.start) {
+        coordsRef.current.start = { lat, lng };
+        if (startRef.current) startRef.current.remove();
+
+        const marker = new tt.Marker({ color: "green" })
+          .setLngLat([lng, lat])
+          .addTo(map);
+        startRef.current = marker;
+      } else if (!coordsRef.current.end) {
+        coordsRef.current.end = { lat, lng };
+        if (endRef.current) endRef.current.remove();
+
+        const marker = new tt.Marker({ color: "red" })
+          .setLngLat([lng, lat])
+          .addTo(map);
+        endRef.current = marker;
+
+        // Call backend
+        fetchSafetyScore(coordsRef.current.start, coordsRef.current.end, mode);
+      } else {
+        // Reset all
+        if (startRef.current) startRef.current.remove();
+        if (endRef.current) endRef.current.remove();
+        if (map.getLayer("route")) map.removeLayer("route");
+        if (map.getSource("route")) map.removeSource("route");
+        setScore(null);
+
+        coordsRef.current.start = { lat, lng };
+        coordsRef.current.end = null;
+
+        const marker = new tt.Marker({ color: "green" })
+          .setLngLat([lng, lat])
+          .addTo(map);
+        startRef.current = marker;
+      }
+    });
+  }, [mode]);
+
+  return (
+    <div>
+      <div id="map" style={{ height: "100vh" }} />
+
+      <div
+        style={{
+          position: "absolute",
+          top: "10px",
+          left: "10px",
+          background: "white",
+          padding: "10px",
+          borderRadius: "10px",
+        }}
+      >
+        <p>Mode: <strong>{mode}</strong></p>
+        <p>Score: <strong>{score?.score}</strong></p>
+        <p>Reason: <strong>{score?.reason}</strong></p>
+
+        <button onClick={() => setMode("car")}>Car</button>
+        <button onClick={() => setMode("bicycle")}>Bicycle</button>
+        <button onClick={() => setMode("pedestrian")}>Pedestrian</button>
+      </div>
+    </div>
   );
-}, []);
-
-
-
-  
-const fetchSafetyScore = async (start, end, mode) => {
-      try {
-
-        if(!start || !end || !mode) {
-          console.error('Missing parameters in fetchSafetyScore');
-          return;
-        }
-
-        const startStr = `${start.lat}, ${start.lng}`;
-        const endStr = `${end.lat}, ${end.lng}`;
-
-        const response = await fetch(`http://localhost:5000/api/route?start=${startStr}&end=${endStr}&mode=${mode}`
-        );
-
-        if(!response.ok) {
-          throw new Error(`HTTP error ${response.status}`);
-        }
-            const data = await response.json();
-            console.log('Safety score:', data.score);
-            setScore(data.score);
-          } catch (error) {
-            console.error('Error fetching safety score:', error);
-          }
-      };
-
-
-      // initialize map and handle click events
-
-      useEffect(() => {
-        const initMap = () => {
-          const map = tt.map({
-            key: import.meta.env.VITE_TOMTOM_API_KEY,
-            container: 'map',
-            center: [77.1025, 28.7041],
-            zoom: 10,
-          });
-
-          let startMarker = null;
-          let endMarker = null;
-          let layerMarker = null;
-
-          map.on('click', (e) => {
-            const { lng, lat } = e.lngLat;
-
-            if(!startMarker) {
-              startMarker = new tt.Marker().setLngLat([lng, lat]).addTo(map);
-            } else if (!endMarker) {
-              endMarker = new tt.Marker().setLngLat([lng, lat]).addTo(map);
-
-              const start = startMarker.getLngLat();
-              const end = endMarker.getLngLat();
-
-              fetchSafetyScore(start, end, mode, map);
-            } else {
-              startMarker.remove();
-              endMarker.remove();
-              startMarker = new tt.Marker().setLngLat([lng, lat]).addTo(map);
-              endMarker = null;
-
-              if(routeLayer) {
-                map.removeLayer('route');
-                map.removeSource('route');
-                routeLayer = null;
-              }
-              setScore(null);
-            }
-          });
-        };
-        initMap();
-      }, []);
-
-
-    return(
-        <div className="map-container">
-            <h2>ClimaRoute+ Map View</h2>
-            <ModeSelector mode={mode} setMode={setMode}/>
-            <SafetyPopup score={score}/>
-            <ShareButton url={shareURL}/>
-
-            <div id='map'
-            style={{ width: '100%', height: '400px', margin: '16px' }}>
-              <SafetyPopup score={score}/>
-            </div>
-        </div>
-    );
-}
+};
 
 export default MapView;

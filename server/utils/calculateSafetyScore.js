@@ -1,37 +1,58 @@
 export const calculateSafetyScore = (alerts, mode = 'car') => {
 
-    let baseScore = 100;
-
-    const weather = alerts.weather?.[0]?.main?.toLowerCase() || '';
-
-    if(weather.includes('rain') || weather.includes('storm') || weather.includes('thunder')) {
-        baseScore -= 30;
-    } else if (weather.includes('snow')) {
-        baseScore -= 20;
-    } else if (weather.includes('fog')) {
-        baseScore -= 15;
-    } else if (weather.includes('clear')) {
-        baseScore -= 0;
-    } else {
-        baseScore -= 10
+    if(!alerts || !alerts.weather || alerts.weather.length === 0) {
+        return {
+            score: 90, reason: 'No weather data available'
+        };
     }
 
-    switch (mode) {
-        case 'car':
-        baseScore -= 5;
+        const main = alerts.weather[0].main.toLowerCase();
+        const description = alerts.weather[0].description || '';
+        const condition = `${main} (${description})`;
+    
+    let baseScore = 100;
+    let reason = `Weather: ${condition}`;
+
+    switch (main) {
+        case 'thunderstorm':
+        baseScore = 40;
+        reason = 'Thunderstorm - high risk';
         break;
-        case 'bicycle':
-        baseScore -= 10;
+        case 'snow':
+        baseScore = 55;
+        reason = 'Snow - low traction';
         break;
-        case 'pedestrain':
-        baseScore -= 15;
+        case 'rain':
+        case 'drizzle':
+        baseScore = 60;
+        reason = 'Rainy conditions - drive carefully';
+        break;
+        case 'fog':
+        case 'mist':
+        baseScore = 65;
+        reason = 'Foggy - reduced visibility';
+        break;
+        case 'clouds':
+        baseScore = 85;
+        reason = 'Cloudy - generally safe';
+        break;
+        case 'clear':
+        baseScore = 95;
+        reason = 'Clear weather - safe to travel';
         break;
         default:
-        baseScore -= 0;
+        baseScore = 80;
+        reason = `Weather condition: ${main}`;
     }
 
-    if (baseScore < 0) baseScore = 0;
-    if(baseScore > 100) baseScore = 100;
+    if(mode === 'bicycle') {
+        baseScore -= 10;
+        reason += '- extra caution for cyclists';
+    } else if (mode === 'pedestrain'){
+        baseScore -= 10;
+        reason += '- extra caution for pedestrains';
+    }
 
-return Math.round(baseScore);
+    const score = Math.max(20, Math.min(100, baseScore));
+    return { score, reason };
 }
