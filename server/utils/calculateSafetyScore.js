@@ -48,9 +48,9 @@ export const calculateSafetyScore = (alerts, mode = 'car') => {
     if(mode === 'bicycle') {
         baseScore -= 10;
         reason += '- extra caution for cyclists';
-    } else if (mode === 'pedestrain'){
+    } else if (mode === 'pedestrian'){
         baseScore -= 10;
-        reason += '- extra caution for pedestrains';
+        reason += '- extra caution for pedestrians';
     }
 
     const score = Math.max(20, Math.min(100, baseScore));
