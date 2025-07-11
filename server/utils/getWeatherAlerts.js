@@ -11,7 +11,7 @@ export default async function getWeatherAlerts(coords) {
         [lat, lon] = coords;
     } else if (typeof coords === 'object') {
         lat = coords.lat;
-        lon = coords.lng;
+        lon = coords.lon || coords.lng;
     }
     if(!lat || !lon) {
         throw new Error('Invalid coordinates for weather alerts');
