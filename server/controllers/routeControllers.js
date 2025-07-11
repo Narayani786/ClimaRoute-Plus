@@ -13,15 +13,14 @@ export const getRoute = async (req, res) => {
         return res.status(400).json({ error: 'Missing start, end or mode query' });
     }
 
-
     const [startLat, startLng] = start.split(',').map(Number);
-    const [endLat, endLng] = start.split(',').map(Number);
+    const [endLat, endLng] = end.split(',').map(Number);
 
     const startCoord = {lat: startLat, lng: startLng};
     const endCoord = {lat: endLat, lng: endLng};
 
-        const routeData = await getRouteFromTomTom(startCoord, endCoord);
-        const alerts = await getWeatherAlerts(start);
+        const routeData = await getRouteFromTomTom(startCoord, endCoord, mode);
+        const alerts = await getWeatherAlerts(startCoord);
         const score = calculateSafetyScore(alerts, mode);
 
         res.json({ routeData, alerts, score });

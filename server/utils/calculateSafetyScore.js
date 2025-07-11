@@ -8,7 +8,7 @@ export const calculateSafetyScore = (alerts, mode = 'car') => {
 
         const main = alerts.weather[0].main.toLowerCase();
         const description = alerts.weather[0].description || '';
-        const condition = `${main} (${description})`;
+        const condition = `${main} - ${description}`;
     
     let baseScore = 100;
     let reason = `Weather: ${condition}`;

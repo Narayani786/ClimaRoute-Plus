@@ -26,8 +26,19 @@ export default async function getWeatherAlerts(coords) {
 
     console.log('Weather alerts data:', data);
 
-    const mainCondition = data.weather?.[0]?.main || 'unknown';
-    const description = data.weather?.[0]?.description || '';
+    if(!data.weather || !Array.isArray(data.weather)) {
+        return {
+            weather: [
+                {
+                    main: 'unknown',
+                    description: ''
+                }
+            ]
+        };
+    }
+
+    const mainCondition = data.weather[0]?.main || 'unknown';
+    const description = data.weather[0]?.description || '';
     
     return {
         weather: [
