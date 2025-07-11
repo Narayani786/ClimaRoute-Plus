@@ -16,6 +16,12 @@ const MapView = () => {
       const startStr = `${start.lat},${start.lng}`;
       const endStr = `${end.lat},${end.lng}`;
 
+      console.log('Fetching safety score with:');
+      console.log('Start:', start);
+      console.log('End:', end);
+      console.log('Mode:', mode);
+
+
       const res = await fetch(
         `http://localhost:5000/api/route?start=${startStr}&end=${endStr}&mode=${mode}`
       );
