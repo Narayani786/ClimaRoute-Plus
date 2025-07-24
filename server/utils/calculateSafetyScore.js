@@ -1,44 +1,41 @@
 export const calculateSafetyScore = (alerts, mode = 'car') => {
-
     if(!alerts || !alerts.weather || alerts.weather.length === 0) {
         return {
             score: 90, reason: 'No weather data available'
         };
     }
-
         const main = alerts.weather[0].main.toLowerCase();
         const description = alerts.weather[0].description || '';
         const condition = `${main} - ${description}`;
-    
     let baseScore = 100;
     let reason = `Weather: ${condition}`;
 
     switch (main) {
         case 'thunderstorm':
         baseScore = 40;
-        reason = 'Thunderstorm - high risk';
+        reason = 'Thunderstorm - High risk';
         break;
         case 'snow':
         baseScore = 55;
-        reason = 'Snow - low traction';
+        reason = 'Snow - Low traction';
         break;
         case 'rain':
         case 'drizzle':
         baseScore = 60;
-        reason = 'Rainy conditions - drive carefully';
+        reason = 'Rainy conditions - Drive carefully';
         break;
         case 'fog':
         case 'mist':
         baseScore = 65;
-        reason = 'Foggy - reduced visibility';
+        reason = 'Foggy - Reduced visibility';
         break;
         case 'clouds':
         baseScore = 85;
-        reason = 'Cloudy - generally safe';
+        reason = 'Cloudy - Generally safe';
         break;
         case 'clear':
         baseScore = 95;
-        reason = 'Clear weather - safe to travel';
+        reason = 'Clear weather - Safe to travel';
         break;
         default:
         baseScore = 80;
@@ -46,11 +43,11 @@ export const calculateSafetyScore = (alerts, mode = 'car') => {
     }
 
     if(mode === 'bicycle') {
-        baseScore -= 10;
-        reason += '- extra caution for cyclists';
+        baseScore -= 15;
+        reason += '- Extra caution for Cyclists';
     } else if (mode === 'pedestrian'){
-        baseScore -= 10;
-        reason += '- extra caution for pedestrians';
+        baseScore -= 20;
+        reason += '- Extra caution for Pedestrians';
     }
 
     const score = Math.max(20, Math.min(100, baseScore));

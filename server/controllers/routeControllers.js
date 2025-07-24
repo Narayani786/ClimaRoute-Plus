@@ -7,6 +7,11 @@ export const getRoute = async (req, res) => {
     try {
         const query = req.query || {};
         const { start, end, mode } = query;
+
+        console.log("mode received :", mode);
+        console.log('start:', startCoord, 'End:', endCoord);
+
+
         if(!start || !end || !mode) {
         return res.status(400).json({ error: 'Missing start, end or mode query' });
     }
