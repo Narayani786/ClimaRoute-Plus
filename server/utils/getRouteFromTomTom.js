@@ -10,7 +10,9 @@ export default async function getRouteFromTomTom (startCoord, endCoord, mode = '
     const startStr = `${startLat}, ${startLng}`;
     const endStr = `${endLat}, ${endLng}`;
 
-    const url = `https://api.tomtom.com/routing/1/calculateRoute/${startStr}:${endStr}/JSON?key=${process.env.TOMTOM_API_KEY}`;
+    const url = `https://api.tomtom.com/routing/1/calculateRoute/${startStr}:${endStr}/json?key=${process.env.TOMTOM_API_KEY}`;
+
+    console.log('TomTom URL:', url);
 
     const response = await fetch(url);
     const data = await response.json();
