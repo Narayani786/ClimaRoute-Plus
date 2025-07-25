@@ -3,18 +3,16 @@ import getWeatherAlerts from '../utils/getWeatherAlerts.js';
 import { calculateSafetyScore } from '../utils/calculateSafetyScore.js';
 
 export const getRoute = async (req, res) => {
-    
     try {
         const query = req.query || {};
+        console.log('Incoming query', query);
         const { start, end, mode } = query;
 
-        console.log("mode received :", mode);
-        console.log('start:', startCoord, 'End:', endCoord);
-
-
-        if(!start || !end || !mode) {
+        if(!start || !end || !mode || !start.includes(',') || !end.includes(',')) {
         return res.status(400).json({ error: 'Missing start, end or mode query' });
     }
+
+    console.log('start:', start, 'End:', end, mode);
 
     const [startLat, startLng] = start.split(',').map(Number);
     const [endLat, endLng] = end.split(',').map(Number);
