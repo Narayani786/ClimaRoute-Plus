@@ -4,15 +4,9 @@ import { calculateSafetyScore } from '../utils/calculateSafetyScore.js';
 
 export const getRoute = async (req, res) => {
     try {
-        const query = req.query || {};
-        console.log('Incoming query', query);
-        const { start, end, mode } = query;
-
-        if(!start || !end || !mode || !start.includes(',') || !end.includes(',')) {
-        return res.status(400).json({ error: 'Missing start, end or mode query' });
-    }
-
-    console.log('start:', start, 'End:', end, mode);
+        console.log('req body:', req.body);
+        
+        const { start, end, mode } = req.body;
 
     const [startLat, startLng] = start.split(',').map(Number);
     const [endLat, endLng] = end.split(',').map(Number);
@@ -20,12 +14,20 @@ export const getRoute = async (req, res) => {
     const startCoord = {lat: startLat, lng: startLng};
     const endCoord = {lat: endLat, lng: endLng};
 
-        const routeData = await getRouteFromTomTom(startCoord, endCoord, mode);
-        const alerts = await getWeatherAlerts(startCoord);
-        const score = calculateSafetyScore(alerts, mode);
+    console.log('start lat:', startCoord.lat, 'start lng:', startCoord.lng);
+    console.log('End lat:', endCoord.lat, 'End lng:', endCoord.lng);
 
-        res.json({ routeData, alerts, score });
+    const testUrl = `https://api.tomtom.com/routing/1/calculateRoute/${startCoord.lat},${startCoord.lng}:${endCoord.lat},${endCoord.lng}/json?travelMode=${mode}&key=${process.env.TOMTOM_API_KEY}`;
+    console.log('TomTom Url:', testUrl);
 
+    const response = await fetch(testUrl);
+    const data = await response.json();
+
+    if(!response.ok) {
+        console.error('TomTom error:', data);
+        return res.status(400).json({ error: 'TomTom API error', details: data});
+    }
+    return res.status(200).json(data);
     } catch (err) {
         console.error('Backend error:', err);
         res.status(500).json({ error: err.message });

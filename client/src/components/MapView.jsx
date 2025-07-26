@@ -17,10 +17,19 @@ const MapView = () => {
       const endStr = `${end.lat},${end.lng}`;
 
       const res = await fetch(
-        `http://localhost:5000/api/route?start=${startStr}&end=${endStr}&mode=${mode}`
-      );
-
+        'http://localhost:5000/api/route', {
+          method: 'POST', 
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            start: startStr,
+            end: endStr,
+            mode: mode,
+          }),
+        });
       const data = await res.json();
+      
       console.log("Fetched safety score:", data);
 
       setScore(data.score);
