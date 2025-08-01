@@ -4,30 +4,30 @@ import { calculateSafetyScore } from '../utils/calculateSafetyScore.js';
 
 export const getRoute = async (req, res) => {
     try {
-        console.log('req body:', req.body);
-        
         const { start, end, mode } = req.body;
 
-    const [startLat, startLng] = start.split(',').map(Number);
-    const [endLat, endLng] = end.split(',').map(Number);
-
-    const startCoord = {lat: startLat, lng: startLng};
-    const endCoord = {lat: endLat, lng: endLng};
-
-    console.log('start lat:', startCoord.lat, 'start lng:', startCoord.lng);
-    console.log('End lat:', endCoord.lat, 'End lng:', endCoord.lng);
-
-    const testUrl = `https://api.tomtom.com/routing/1/calculateRoute/${startCoord.lat},${startCoord.lng}:${endCoord.lat},${endCoord.lng}/json?travelMode=${mode}&key=${process.env.TOMTOM_API_KEY}`;
-    console.log('TomTom Url:', testUrl);
-
-    const response = await fetch(testUrl);
-    const data = await response.json();
-
-    if(!response.ok) {
-        console.error('TomTom error:', data);
-        return res.status(400).json({ error: 'TomTom API error', details: data});
+    if(!start || !end || !mode) {
+        return res.status(400).json({ message: 'Missing start, end, or mode in request body.'});
     }
-    return res.status(200).json(data);
+    console.log('Received request for safety score:');
+    console.log('Start:', start);
+    console.log('End:', end, 'mode:', mode);
+
+    const routeData = await getRouteFromTomTom(start, end, mode);
+    if(!routeData || !routeData.routes || routeData.routes.length === 0) {
+        return res.status(400).json({ score: 'N/A', reason: 'No valid route found.'});
+    }
+
+    const weatherData = await getWeatherAlerts(start, end);
+    if(!weatherData) {
+        return res.status(500).json({ score: 'N/A', reason: 'Weather data unavailable.'});
+    }
+
+    const { score, reason } = calculateSafetyScore(weatherData);
+
+    console.log('Score:', score);
+    console.log('Reason:', reason);
+    res.json({ score, reason });
     } catch (err) {
         console.error('Backend error:', err);
         res.status(500).json({ error: err.message });

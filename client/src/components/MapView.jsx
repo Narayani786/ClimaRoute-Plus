@@ -16,8 +16,7 @@ const MapView = () => {
       const startStr = `${start.lat},${start.lng}`;
       const endStr = `${end.lat},${end.lng}`;
 
-      const res = await fetch(
-        'http://localhost:5000/api/route', {
+      const res = await fetch('http://localhost:5000/api/route', {
           method: 'POST', 
           headers: {
             'Content-Type': 'application/json'
